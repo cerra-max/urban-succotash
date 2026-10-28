@@ -1,0 +1,9 @@
+# Render 免费部署：在 Render 控制台选 New → Blueprint，连接这个仓库即可
+services:
+  - type: web
+    name: wubianji
+    runtime: python
+    plan: free
+    buildCommand: "true"
+    startCommand: python3 -u server.py --host 0.0.0.0
+    healthCheckPath: /api/info

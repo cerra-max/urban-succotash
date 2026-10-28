@@ -8,7 +8,9 @@
 
 - GET /              提供 index.html（局域网内其他人可直接用浏览器打开）
 - GET /api/info      服务器信息（局域网地址，用于生成分享链接）
-- WS  /ws?room=ID    协作通道
+- WS  /api/ws?room=ID    协作通道
+
+放在反向代理后面时，只需把 /api/* 转发到本服务；/api 前缀被去掉也能正常工作。
 
 同步模型：画板 = items（按 id 存放的元素）+ order（顶层元素顺序）+ assets（图片）。
 客户端把本地修改整理成按元素的差异（op）发给服务器，服务器按到达顺序应用（同一元素后写者胜），
@@ -265,7 +267,8 @@ async def handle(reader, writer):
             if ':' in ln:
                 k, v = ln.split(':', 1); hdr[k.strip().lower()] = v.strip()
         u = urlparse(target)
-        if u.path == '/ws' and hdr.get('upgrade', '').lower() == 'websocket':
+        path = u.path[4:] if u.path.startswith('/api/') else u.path
+        if path == '/ws' and hdr.get('upgrade', '').lower() == 'websocket':
             key = hdr.get('sec-websocket-key', '')
             acc = base64.b64encode(hashlib.sha1((key + GUID).encode()).digest()).decode()
             writer.write(('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n'
@@ -277,10 +280,10 @@ async def handle(reader, writer):
             return
         if method not in ('GET', 'HEAD'):
             return await respond(writer, '405 Method Not Allowed', '不支持的请求')
-        if u.path in ('/', '/index.html'):
+        if path in ('/', '/index.html'):
             with open(os.path.join(ROOT, 'index.html'), 'rb') as fp:
                 return await respond(writer, '200 OK', fp.read(), 'text/html; charset=utf-8')
-        if u.path == '/api/info':
+        if path == '/info':
             return await respond(writer, '200 OK', json.dumps({'app': 'wubianji', 'port': PORT, 'addrs': lan_addrs()}), 'application/json')
         await respond(writer, '404 Not Found', '找不到页面')
     except (asyncio.IncompleteReadError, asyncio.LimitOverrunError, asyncio.TimeoutError, ConnectionError):

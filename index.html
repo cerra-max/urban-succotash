@@ -2140,7 +2140,7 @@ function onCollabMsg(m){
 function collabConnect(){
   collabClose(true);
   if (!board.room || !board.server){ updateCollabUI(); return; }
-  const gen = collab.gen, url = board.server.replace(/^http/, 'ws') + '/ws?room=' + encodeURIComponent(board.room) + '&name=' + encodeURIComponent(myName);
+  const gen = collab.gen, url = board.server.replace(/^http/, 'ws') + '/api/ws?room=' + encodeURIComponent(board.room) + '&name=' + encodeURIComponent(myName);
   collab.room = board.room; collab.server = board.server; collab.status = 'connecting';
   updateCollabUI();
   if (!collab.info || collab.info.server !== board.server)
